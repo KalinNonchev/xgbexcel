@@ -1,6 +1,6 @@
 import json
 import sys
-from openpyxl.utils.cell import get_column_letter
+# from openpyxl.utils.cell import get_column_letter
 
 
 class XGBtoExcel:
@@ -50,7 +50,7 @@ class XGBtoExcel:
 
 class Node:
 
-    def __init__(self, node_dict):
+    def __init__(self, node_dict, sep=','):
         """
         A class representing a node in a decision tree.
 
@@ -70,13 +70,15 @@ class Node:
         node_keys = ["nodeid", "depth", "split",
                      "split_condition", "yes", "no", "children"]
         self.isLeaf = not all(key in node_dict.keys() for key in node_keys)
+        self.sep = sep
         if self.isLeaf:
             self.nodeid = node_dict["nodeid"]
             self.leaf_value = node_dict["leaf"]
         else:
             self.nodeid = node_dict["nodeid"]
             self.depth = node_dict["depth"]
-            self.split = f'{get_column_letter(int(node_dict["split"].replace("f", "")) + 1)}1'
+            # self.split = f'{get_column_letter(int(node_dict["split"].replace("f", "")) + 1)}1'
+            self.split = f'x{int(node_dict["split"].replace("f", "")) + 1}'
             self.split_condition = node_dict["split_condition"]
             self.left_child_id = node_dict["yes"]
             self.right_child_id = node_dict["no"]
@@ -96,4 +98,4 @@ class Node:
         if self.isLeaf:
             return str(self.leaf_value)
         else:
-            return f'IF(({self.split}<={self.split_condition}),{Node(self.left_children_node_dict)},{Node(self.right_children_node_dict)})'
+            return f'IF(({self.split}<={self.split_condition}){self.sep}{Node(self.left_children_node_dict)}{self.sep}{Node(self.right_children_node_dict)})'

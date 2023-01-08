@@ -15,6 +15,6 @@ setup(name='xgbexcel',
       #      },
       include_package_data=True,
       # external packages as dependencies,
-      install_requires=['openpyxl'],
+      # install_requires=[],
       python_requires='>=3.6'
       )

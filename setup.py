@@ -15,6 +15,6 @@ setup(name='xgbexcel',
       #      },
       include_package_data=True,
       # external packages as dependencies,
-      # install_requires=[],
+      install_requires=['xgboost'],
       python_requires='>=3.6'
       )

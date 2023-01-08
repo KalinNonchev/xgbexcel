@@ -21,9 +21,9 @@ from xgboost import XGBRegressor
 
 2. Create dummy dataset and fit XGBRegressor model
 ```
-X, y = np.random.randint(0, 1000, (100, 2)), np.random.randint(0, 10, 100)
+X_train, y_train = np.random.randint(0, 1000, (100, 2)), np.random.randint(0, 10, 100)
 model = XGBRegressor(n_estimators=2, max_depth=1)
-model.fit(X, y)
+model.fit(X_train, y_train)
 ```
 
 3. Convert XGBRegressor model to an Excel formula
@@ -36,5 +36,7 @@ xgb_excel_expr.expression
 ```
 xgb_excel_expr.save_expr('dummy.txt')
 ```
-5. You can copy the expression in the Excel sheet as a formula
+5. The features in the Excel formula are represented using the `x1`, `x2`, `x3`, etc. notation, where the numbers correspond to the enumeration of the features in the `XGBRegressor` model and `X_train`. You can manually rename the features in the Excel formula to match the desired column names in the Excel sheet. Once you have renamed the features, you can copy the expression in the Excel sheet as a formula.
+
+6. **Enjoy**
 

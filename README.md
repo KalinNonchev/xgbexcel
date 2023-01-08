@@ -32,11 +32,19 @@ xgb_excel_expr = XGBtoExcel(model)
 xgb_excel_expr.expression
 ```
 
-4. Save Excel expression to a file
+4. The features in the Excel formula are represented using the `x1`, `x2`, `x3`, etc. notation, where the numbers correspond to the enumeration of the features in the `XGBRegressor` model and `X_train`. You can manually rename the features in the Excel formula to match the desired column names in the Excel sheet. Once you have renamed the features, you can copy the expression in the Excel sheet as a formula.
+
+```
+feature_map = {'x1': 'feature1', 'x2': 'feature2'}
+xgb_excel_expr.rename_features(feature_map)
+xgb_excel_expr.expression
+```
+
+5. Save Excel expression to a file
 ```
 xgb_excel_expr.save_expr('dummy.txt')
 ```
-5. The features in the Excel formula are represented using the `x1`, `x2`, `x3`, etc. notation, where the numbers correspond to the enumeration of the features in the `XGBRegressor` model and `X_train`. You can manually rename the features in the Excel formula to match the desired column names in the Excel sheet. Once you have renamed the features, you can copy the expression in the Excel sheet as a formula.
 
 6. **Enjoy**
 
+Try it yourself in the example notebook: `howXGBtoExcel.ipynb` 

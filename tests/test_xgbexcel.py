@@ -1,15 +1,12 @@
 import os
 import pytest
-import numpy as np
 import xgboost as xgb
 from xgbexcel import XGBtoExcel
 
-# Set the seed for the random number generator
-np.random.seed(13)
-
-# Generate some random data to fit the model
-X = np.random.rand(100, 2)
-y = np.random.rand(100)
+# Generate the data to fit the model
+X = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10],
+              [11, 1], [13, 3], [1, 16], [17, 3], [19, 20]]
+y = [100, 1, 2, 2, 1, 1, 2, 2, 1, 2]
 
 # Fit the XGBoost model
 model = xgb.XGBRegressor(n_estimators=2, max_depth=1)
@@ -23,7 +20,7 @@ def test_xgb_to_excel_expr():
     assert isinstance(xgb_to_excel.expression, str)
     
     # Test that the expression attribute is not empty
-    assert xgb_to_excel.expression == "((IF((x1<=0.255339563),-0.0447236858,0.00825651549)+IF((x2<=0.717021346),0.00409270683,-0.038642168))+0.5)"
+    assert xgb_to_excel.expression == "((IF((x1<=2),10.1000004,0.266666681)+IF((x2<=2.5),8.96333408,-0.0988889039))+0.5)"
 
 def test_rename_features():
     # Initialize the XGBtoExcel object

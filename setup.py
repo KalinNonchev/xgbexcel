@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(name='xgbexcel',
       version='0.0.1',
-      description='Convert XGBoost model to an Excel formula expression.',
+      description='Convert an XGBRegressor model to an Excel formula expression.',
       author='KalinNonchev',
       author_email='boo@foo.com',
       license='MIT License',

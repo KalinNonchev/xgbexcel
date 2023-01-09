@@ -1,3 +1,4 @@
+[![Downloads](https://static.pepy.tech/badge/xgbexcel)](https://pepy.tech/project/xgbexcel) ![Python package](https://github.com/KalinNonchev/xgbexcel/actions/workflows/python-package.yml/badge.svg) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/KalinNonchev/xgbexcel/issues)
 # xgbexcel
 
 Python package that converts an XGBRegressor model to an Excel formula expression.

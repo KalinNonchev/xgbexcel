@@ -3,6 +3,8 @@
 
 Python package that converts an XGBRegressor model to an Excel formula expression.
 
+## NB: The package works with xgboost==1.7.1. In [xgboost==2.0](https://github.com/dmlc/xgboost/releases/tag/v2.0.0), vector leaves were introduced. While I may have limited time to address this myself, contributions and improvements are always welcome. Start from [here](https://github.com/dmlc/xgboost/releases/tag/v2.0.0)
+
 ## How to start
 
 First, you have to install the package.

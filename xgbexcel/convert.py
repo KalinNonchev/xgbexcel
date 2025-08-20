@@ -52,9 +52,15 @@ class XGBtoExcel:
         return self.expression
 
     def rename_features(self, feature_names):
+        """
+        A method that takes an expression and a dictionary of feature names and 
+        returns a new expression with the features renamed based on the dictionary
+        """
+        # Iterate through the features and rename thm
         for old_name, new_name in feature_names.items():
             self.expression = self.expression.replace(old_name, new_name)
-        print('Features renamed!')
+        
+        print('Feature are renamed!')
 
     def save_expr(self, outFile):
         with open(outFile, 'w') as f:

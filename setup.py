@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(name='xgbexcel',
-      version='0.0.1',
-      description='Convert an XGBRegressor model to an Excel formula expression.',
+      version='0.1.0',
+      description='Convert XGBRegressor or XGBClassifier models to an Excel formula expression.',
       author='KalinNonchev',
       author_email='boo@foo.com',
       license='MIT License',
@@ -16,5 +16,5 @@ setup(name='xgbexcel',
       include_package_data=True,
       # external packages as dependencies,
       install_requires=['xgboost'],
-      python_requires='>=3.6'
+      python_requires='>=3.8'
       )

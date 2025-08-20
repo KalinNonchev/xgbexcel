@@ -1,7 +1,7 @@
 [![Downloads](https://static.pepy.tech/badge/xgbexcel)](https://pepy.tech/project/xgbexcel) ![Python package](https://github.com/KalinNonchev/xgbexcel/actions/workflows/python-package.yml/badge.svg) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/KalinNonchev/xgbexcel/issues)
 # xgbexcel
 
-Python package that converts an XGBRegressor model to an Excel formula expression.
+Python package that converts an XGBRegressor or XGBClassifier models to an Excel formula expression.
 
 ## NB: The package works with xgboost==1.7.1. In [xgboost==2.0](https://github.com/dmlc/xgboost/releases/tag/v2.0.0), vector leaves were introduced. While I may have limited time to address this myself, contributions and improvements are always welcome. Start from [here](https://github.com/dmlc/xgboost/releases/tag/v2.0.0)
 

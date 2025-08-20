@@ -29,24 +29,24 @@ class XGBtoExcel:
 
     def _get_expr(self):
         if not self.is_classifier:
-            # Regression: sum all tree outputs
-            expr = self.expression_trees[0]
+            expression = self.expression_trees[0]
             for idx in range(1, len(self.expression_trees)):
-                expr = f"({expr}+{self.expression_trees[idx]})"
-            return f"({expr}+{self.const})"
+                expression = f"({expression}+{self.expression_trees[idx]})"
+            return f"({expression}+{self.const})"
         else:
-            # Classification: group trees by class
+            # CLASSIFIER LOGIC (multi-class)
             class_expressions = []
             for c in range(self.num_class):
                 expr = self.expression_trees[c]
                 for idx in range(c + self.num_class, len(self.expression_trees), self.num_class):
                     expr = f"({expr}+{self.expression_trees[idx]})"
                 class_expressions.append(f"({expr}+{self.const})")
-
+    
             # Softmax in Excel
             denom = "+".join([f"EXP({ce})" for ce in class_expressions])
             softmax_exprs = [f"(EXP({ce})/({denom}))" for ce in class_expressions]
             return " , ".join(softmax_exprs)  # comma-separated probabilities
+
 
     def __str__(self):
         return self.expression

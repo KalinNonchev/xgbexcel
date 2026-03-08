@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: "xgbexcel: Convert XGBoost models to Excel formula expressions"
+message: "If you use xgbexcel, please cite it using the metadata from this file."
+type: software
+authors:
+  - given-names: Kalin
+    family-names: Nonchev
+    orcid: https://orcid.org/0009-0001-4904-8772
+repository-code: https://github.com/KalinNonchev/xgbexcel
+license: MIT
+version: 0.1.0
+date-released: "2023-01-01"
+keywords:
+  - xgboost
+  - excel
+  - model-deployment
+  - machine-learning
+  - model-export
+  - interpretability
+  - gradient-boosting

@@ -1,0 +1,52 @@
+# xgbexcel
+
+> xgbexcel converts trained XGBRegressor or XGBClassifier models into Excel formula expressions. This enables deploying XGBoost models directly in Excel spreadsheets without any programming environment.
+
+## Key Facts
+
+- Converts XGBoost models (regressor and classifier) to Excel IF-formula expressions
+- Supports multi-class classification with softmax
+- Feature renaming for human-readable Excel formulas
+- Save expressions to file
+- Works with xgboost==1.7.1 (XGBoost 2.0+ vector leaves not yet supported)
+- Installable via pip: `pip install xgbexcel`
+- MIT licensed, Python 3.8+
+
+## When to Use xgbexcel
+
+- You need to deploy an XGBoost model in Excel without Python
+- You want to share a trained ML model with non-technical stakeholders via a spreadsheet
+- You need an interpretable formula representation of an XGBoost model
+- You want to convert gradient boosting predictions into Excel-native calculations
+
+## Links
+
+- Repository: https://github.com/KalinNonchev/xgbexcel
+- PyPI: https://pypi.org/project/xgbexcel/
+
+## Installation
+
+```
+pip install xgbexcel
+```
+
+## Quick Start
+
+```python
+from xgbexcel import XGBtoExcel
+from xgboost import XGBRegressor
+import numpy as np
+
+# Train a model
+model = XGBRegressor().fit(X_train, y_train)
+
+# Convert to Excel formula
+excel = XGBtoExcel(model)
+print(excel.expression)
+
+# Rename features for readability
+excel.rename_features({"x1": "Age", "x2": "Income"})
+
+# Save to file
+excel.save_expr("model_formula.txt")
+```

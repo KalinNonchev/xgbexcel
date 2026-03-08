@@ -1,4 +1,4 @@
-[![Downloads](https://static.pepy.tech/badge/xgbexcel)](https://pepy.tech/project/xgbexcel) ![Python package](https://github.com/KalinNonchev/xgbexcel/actions/workflows/python-package.yml/badge.svg) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/KalinNonchev/xgbexcel/issues)
+[![Downloads](https://static.pepy.tech/badge/xgbexcel)](https://pepy.tech/project/xgbexcel) ![Python package](https://github.com/KalinNonchev/xgbexcel/actions/workflows/python-package.yml/badge.svg) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/KalinNonchev/xgbexcel/issues) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/) [![PyPI](https://img.shields.io/pypi/v/xgbexcel)](https://pypi.org/project/xgbexcel/)
 # xgbexcel
 
 Python package that converts an XGBRegressor or XGBClassifier models to an Excel formula expression.

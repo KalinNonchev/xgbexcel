@@ -35,7 +35,7 @@ classifiers = [
     "Topic :: Software Development :: Code Generators",
     "Typing :: Typed",
 ]
-dependencies = ["xgboost>=1.7", "numpy>=1.20"]
+dependencies = ["xgboost>=1.7", "numpy>=2.2.6"]
 
 [project.optional-dependencies]
 test = ["pytest>=7", "pytest-cov>=4", "numpy", "pandas", "scikit-learn"]

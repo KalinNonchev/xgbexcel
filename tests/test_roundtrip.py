@@ -6,7 +6,11 @@ import numpy as np
 import pytest
 import xgboost as xgb
 
-from tests.conftest import assert_formula_matches_model, predict_from_formula
+from tests.conftest import (
+    assert_formula_matches_model,
+    predict_from_formula,
+    requires_xgboost_2,
+)
 from xgbexcel import XGBtoExcel
 
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
@@ -17,7 +21,7 @@ pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
     [
         ("reg:squarederror", 5, 3),
         ("reg:squarederror", 1, 1),
-        ("reg:absoluteerror", 4, 2),
+        pytest.param("reg:absoluteerror", 4, 2, marks=requires_xgboost_2),
         ("reg:pseudohubererror", 4, 2),
         ("count:poisson", 4, 3),
         ("reg:gamma", 4, 2),
@@ -84,6 +88,7 @@ def test_multi_output_regression_one_tree_per_output(integer_data):
     assert_formula_matches_model(converter, model, X)
 
 
+@requires_xgboost_2
 def test_vector_leaves(integer_data):
     """multi_output_tree emits a list per leaf. This is what the old README flagged."""
     X, y = integer_data

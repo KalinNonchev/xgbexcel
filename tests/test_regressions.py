@@ -12,7 +12,12 @@ import numpy as np
 import pytest
 import xgboost as xgb
 
-from tests.conftest import assert_formula_matches_model, predict_from_formula
+from tests.conftest import (
+    XGBOOST_VERSION,
+    assert_formula_matches_model,
+    predict_from_formula,
+    requires_xgboost_2,
+)
 from xgbexcel import XGBtoExcel
 from xgbexcel.convert import UnsupportedModelError
 
@@ -48,7 +53,7 @@ def test_base_score_read_from_booster_config(integer_data):
     y_shifted = y + 100.0  # a base_score far from the old 0.5 fallback
     model = xgb.XGBRegressor(n_estimators=3, max_depth=2).fit(X, y_shifted)
 
-    assert model.base_score is None, "fixture assumption: attribute is unset on modern xgboost"
+    assert model.base_score is None, "fixture assumption: attribute is unset"
     converter = XGBtoExcel(model)
 
     config = json.loads(model.get_booster().save_config())
@@ -56,7 +61,9 @@ def test_base_score_read_from_booster_config(integer_data):
     expected = json.loads(stored)[0] if stored.strip().startswith("[") else float(stored)
 
     assert converter.base_scores[0] == pytest.approx(expected)
-    assert converter.base_scores[0] != 0.5
+    if XGBOOST_VERSION >= (2, 0):
+        # 2.0+ estimates the intercept from the data; 1.x always used 0.5.
+        assert converter.base_scores[0] != 0.5
     assert_formula_matches_model(converter, model, X)
 
 
@@ -78,7 +85,9 @@ def test_multiclass_uses_per_class_base_scores(integer_data):
 
     converter = XGBtoExcel(model)
     assert len(converter.base_scores) == 3
-    assert converter.base_scores != [0.5, 0.5, 0.5]
+    if XGBOOST_VERSION >= (2, 0):
+        # 3.x stores one intercept per class; 1.x stored a single 0.5 for all of them.
+        assert converter.base_scores != [0.5, 0.5, 0.5]
     assert_formula_matches_model(converter, model, X)
 
 
@@ -107,6 +116,7 @@ def test_binary_classification_uses_a_sigmoid_not_softmax(integer_data):
     assert_formula_matches_model(converter, model, X)
 
 
+@requires_xgboost_2
 def test_vector_leaves_are_supported(integer_data):
     """Was unsupported, and is what the old README pointed at."""
     X, y = integer_data

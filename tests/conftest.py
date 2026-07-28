@@ -13,6 +13,15 @@ import math
 
 import numpy as np
 import pytest
+import xgboost as xgb
+
+XGBOOST_VERSION = tuple(int(part) for part in xgb.__version__.split(".")[:2])
+
+# XGBoost 2.0 added multi_strategy, several objectives, and the estimated intercept
+# that replaced the fixed base_score of 0.5.
+requires_xgboost_2 = pytest.mark.skipif(
+    XGBOOST_VERSION < (2, 0), reason="requires XGBoost 2.0 or newer"
+)
 
 
 def _excel_if(condition, if_true, if_false):

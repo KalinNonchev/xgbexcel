@@ -56,6 +56,9 @@ xgbexcel = ["py.typed"]
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
+# Put the repo root on sys.path so `from tests.conftest import ...` resolves under a
+# bare `pytest` invocation, which unlike `python -m pytest` does not add the CWD.
+pythonpath = ["."]
 addopts = "-ra --strict-markers --strict-config"
 filterwarnings = ["error::DeprecationWarning"]
 

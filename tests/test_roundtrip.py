@@ -122,7 +122,7 @@ def test_deep_tree_does_not_hit_the_recursion_limit(continuous_data):
     """The old converter called sys.setrecursionlimit(10000) to survive this."""
     X, y = continuous_data
     model = xgb.XGBRegressor(
-        n_estimators=2, max_depth=0, grow_policy="lossguide", max_leaves=64
+        n_estimators=2, max_depth=0, grow_policy="lossguide", max_leaves=64, tree_method="hist"
     ).fit(X, y)
 
     assert_formula_matches_model(XGBtoExcel(model), model, X)

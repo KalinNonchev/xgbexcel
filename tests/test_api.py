@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import xgboost as xgb
 
-from tests.conftest import assert_formula_matches_model
+from tests.conftest import assert_formula_matches_model, categorical_fixture_works
 from xgbexcel import XGBtoExcel, __version__
 from xgbexcel.convert import UnsupportedModelError
 
@@ -108,13 +108,17 @@ def test_size_warning_can_be_silenced(continuous_data):
         XGBtoExcel(big, warn_on_size=False)
 
 
+@categorical_fixture_works
 def test_categorical_splits_are_rejected(integer_data):
     pd = pytest.importorskip("pandas")
 
     X, y = integer_data
     frame = pd.DataFrame(X, columns=["a", "b", "c", "d"])
     frame["a"] = frame["a"].astype(int).astype("category")
-    model = xgb.XGBRegressor(n_estimators=4, max_depth=3, enable_categorical=True).fit(frame, y)
+    # Categorical splits need the histogram method; 1.7's default exact rejects them.
+    model = xgb.XGBRegressor(
+        n_estimators=4, max_depth=3, enable_categorical=True, tree_method="hist"
+    ).fit(frame, y)
 
     with pytest.raises(UnsupportedModelError, match="categorical"):
         XGBtoExcel(model)
@@ -148,30 +152,49 @@ def test_gblinear_is_rejected(integer_data):
     X, y = integer_data
     model = xgb.XGBRegressor(booster="gblinear", n_estimators=3).fit(X, y)
 
-    with pytest.raises(UnsupportedModelError, match="gbtree"):
+    with pytest.raises(UnsupportedModelError, match="not supported"):
         XGBtoExcel(model)
 
 
-def test_dart_without_drops_matches(integer_data):
-    """With rate_drop=0, dart serialises as a plain gbtree."""
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param({}, id="no-drops"),
+        pytest.param({"rate_drop": 0.3, "skip_drop": 0.0}, id="with-drops"),
+    ],
+)
+def test_dart_matches_model(integer_data, params):
+    """dart nests its trees differently depending on the XGBoost release.
+
+    Up to 3.0 it serialises as name='dart' with the trees under 'gbtree'; newer
+    builds flatten it into a plain gbtree. Either layout has to convert.
+    """
     X, y = integer_data
-    model = xgb.XGBRegressor(booster="dart", n_estimators=4, max_depth=2).fit(X, y)
+    model = xgb.XGBRegressor(booster="dart", n_estimators=8, max_depth=2, **params).fit(X, y)
 
     converter = XGBtoExcel(model)
-    assert converter._tree_weights == [1.0] * 4
+    assert converter.n_trees_used == 8
     assert_formula_matches_model(converter, model, X)
 
 
-def test_dart_with_drops_scales_each_tree(integer_data):
-    """dart drops trees and reweights the survivors, so a plain sum would be wrong."""
+def test_dart_applies_the_recorded_tree_weights(integer_data):
+    """Dropped trees contribute a scaled amount, so a flat sum would be wrong.
+
+    Only some XGBoost builds actually record weights below 1.0, so the scaling itself
+    is pinned by a unit test on _weighted rather than by the fixture.
+    """
     X, y = integer_data
     model = xgb.XGBRegressor(
         booster="dart", n_estimators=8, max_depth=2, rate_drop=0.3, skip_drop=0.0
     ).fit(X, y)
 
     converter = XGBtoExcel(model)
-    assert any(weight != 1.0 for weight in converter._tree_weights), "fixture needs drops"
-    assert_formula_matches_model(converter, model, X)
+    assert len(converter._tree_weights) == converter.n_trees_used
+    assert all(0.0 < weight <= 1.0 for weight in converter._tree_weights)
+
+    converter._tree_weights = [0.5] + [1.0] * (converter.n_trees_used - 1)
+    assert converter._weighted("IF((x1<1.0),2.0,3.0)", 0) == "(IF((x1<1.0),2.0,3.0))*0.5"
+    assert converter._weighted("IF((x1<1.0),2.0,3.0)", 1) == "IF((x1<1.0),2.0,3.0)"
 
 
 def test_conversion_is_deterministic(model):

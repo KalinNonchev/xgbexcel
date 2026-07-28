@@ -69,7 +69,7 @@ def test_rows_sitting_exactly_on_a_split_are_routed_correctly():
     X = generator.normal(0, 1, (250, 3))
     y = X[:, 0] * 2.0 + generator.normal(0, 0.3, 250)
 
-    model = xgb.XGBRegressor(n_estimators=10, max_depth=4).fit(X, y)
+    model = xgb.XGBRegressor(n_estimators=10, max_depth=4, tree_method="hist").fit(X, y)
     converter = XGBtoExcel(model, warn_on_size=False)
 
     # The thresholds really are training values, which is what makes this bite.
@@ -92,7 +92,7 @@ def test_every_row_matches_not_merely_the_average():
     X = generator.normal(0, 1, (300, 4))
     y = np.sin(X[:, 0]) * 3 + X[:, 2] + generator.normal(0, 0.2, 300)
 
-    model = xgb.XGBRegressor(n_estimators=12, max_depth=5).fit(X, y)
+    model = xgb.XGBRegressor(n_estimators=12, max_depth=5, tree_method="hist").fit(X, y)
     converter = XGBtoExcel(model, warn_on_size=False)
 
     actual = predict_from_formula(converter, X)

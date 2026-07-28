@@ -67,9 +67,13 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   xgboost-versions:
-    # The converter reads XGBoost's serialised model, so its layout matters. Pin the
-    # boundaries of the supported range and also test the unreleased build.
+    # The converter reads XGBoost's serialised model, and that layout has changed
+    # across releases (dart nesting, iteration_indptr, per-class base_score). Pin the
+    # boundaries of the supported range and also watch the unreleased build.
     runs-on: ubuntu-latest
+    # The pre-release build is an early warning, not a merge gate: it can break for
+    # reasons upstream that we have not had a chance to react to yet.
+    continue-on-error: ${{ matrix.xgboost == 'pre' }}
     strategy:
       fail-fast: false
       matrix:
@@ -81,16 +85,20 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install -e ".[test]"
-      - name: Install XGBoost ${{ matrix.xgboost }}
+      - name: Install with XGBoost ${{ matrix.xgboost }}
+        # Resolve the whole stack in one pip invocation. Pinning XGBoost first and
+        # downgrading NumPy afterwards leaves pandas and scikit-learn built against
+        # the NumPy that was just removed, which fails at import.
         run: |
-          if [ "${{ matrix.xgboost }}" = "latest" ]; then
-            python -m pip install --upgrade xgboost
-          elif [ "${{ matrix.xgboost }}" = "pre" ]; then
-            python -m pip install --upgrade --pre xgboost
-          else
-            python -m pip install "xgboost==${{ matrix.xgboost }}"
-          fi
+          case "${{ matrix.xgboost }}" in
+            latest) python -m pip install -e ".[test]" --upgrade xgboost ;;
+            pre)    python -m pip install -e ".[test]" &&
+                    python -m pip install --upgrade --pre xgboost ;;
+            1.7.6|2.0.3)
+              # These predate NumPy 2.0 and still reference the removed np.NaN.
+              python -m pip install -e ".[test]" "xgboost==${{ matrix.xgboost }}" "numpy<2" ;;
+            *)      python -m pip install -e ".[test]" "xgboost==${{ matrix.xgboost }}" ;;
+          esac
       - run: python -c "import xgboost; print('xgboost', xgboost.__version__)"
       - run: pytest -q
 

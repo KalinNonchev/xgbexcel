@@ -85,8 +85,8 @@ def test_multiclass_uses_per_class_base_scores(integer_data):
 
     converter = XGBtoExcel(model)
     assert len(converter.base_scores) == 3
-    if XGBOOST_VERSION >= (2, 0):
-        # 3.x stores one intercept per class; 1.x stored a single 0.5 for all of them.
+    if XGBOOST_VERSION >= (3, 0):
+        # 3.x stores one intercept per class; earlier versions used a single 0.5.
         assert converter.base_scores != [0.5, 0.5, 0.5]
     assert_formula_matches_model(converter, model, X)
 
@@ -108,7 +108,7 @@ def test_binary_classification_uses_a_sigmoid_not_softmax(integer_data):
 
     # The intercept is the logit of the stored probability, not the probability.
     config = json.loads(model.get_booster().save_config())
-    stored = float(json.loads(config["learner"]["learner_model_param"]["base_score"])[0])
+    stored = XGBtoExcel._parse_base_score(config["learner"]["learner_model_param"]["base_score"])[0]
     assert converter.base_scores[0] == pytest.approx(math.log(stored / (1 - stored)))
 
     probabilities = predict_from_formula(converter, X)
@@ -125,10 +125,15 @@ def test_vector_leaves_are_supported(integer_data):
         X, targets
     )
 
-    dump = json.loads(model.get_booster().get_dump(dump_format="json")[0])
-    assert isinstance(next(iter(_leaves(dump)))["leaf"], list), "fixture needs vector leaves"
+    # Read the serialised model rather than get_dump(), which refuses multi-target
+    # trees on XGBoost 2.0.
+    raw = json.loads(bytes(model.get_booster().save_raw(raw_format="json")))
+    tree = raw["learner"]["gradient_booster"]["model"]["trees"][0]
+    assert int(tree["tree_param"]["size_leaf_vector"]) == 2, "fixture needs vector leaves"
 
-    assert_formula_matches_model(XGBtoExcel(model), model, X)
+    converter = XGBtoExcel(model)
+    assert converter._vector_leaves is True
+    assert_formula_matches_model(converter, model, X)
 
 
 def test_rename_does_not_match_a_longer_feature_name(continuous_data):
@@ -280,7 +285,7 @@ def test_text_dump_thresholds_would_give_wrong_branches(continuous_data):
     for the extra machinery stays visible.
     """
     X, y = continuous_data
-    model = xgb.XGBRegressor(n_estimators=10, max_depth=4).fit(X, y)
+    model = xgb.XGBRegressor(n_estimators=10, max_depth=4, tree_method="hist").fit(X, y)
 
     trees = [json.loads(tree) for tree in model.get_booster().get_dump(dump_format="json")]
 

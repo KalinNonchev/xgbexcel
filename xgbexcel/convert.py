@@ -150,10 +150,20 @@ class XGBtoExcel:
         gradient_booster = learner["gradient_booster"]
 
         booster_name = gradient_booster.get("name", "gbtree")
-        if booster_name != "gbtree":
+        # A dart booster nests its trees under "gbtree" on XGBoost 2.0 through 3.0, and
+        # flattens into a plain gbtree on newer builds. Either way the trees are the
+        # same; the per-tree weights in "weight_drop" carry the dropout.
+        tree_container = gradient_booster
+        if booster_name == "dart":
+            tree_container = gradient_booster.get("gbtree", gradient_booster)
+        elif booster_name != "gbtree":
             raise UnsupportedModelError(
-                f"booster {booster_name!r} is not supported; only 'gbtree' models can be "
+                f"booster {booster_name!r} is not supported; only tree boosters can be "
                 "written as an exact Excel formula"
+            )
+        if "model" not in tree_container:
+            raise UnsupportedModelError(
+                f"could not locate the tree model in a {booster_name!r} booster"
             )
 
         self.objective: str = learner["objective"]["name"]
@@ -164,7 +174,7 @@ class XGBtoExcel:
             )
         self.link: str = _OBJECTIVES[self.objective]
 
-        model = gradient_booster["model"]
+        model = tree_container["model"]
         model_param = learner["learner_model_param"]
 
         self.sep = sep
@@ -179,7 +189,9 @@ class XGBtoExcel:
         self._leaf_size = int(trees[0]["tree_param"].get("size_leaf_vector", 1) or 1)
         self._vector_leaves = self._leaf_size > 1
 
-        self.n_trees_used: int = self._trees_in_use(xgb_model, booster, model, len(trees))
+        self.n_trees_used: int = self._trees_in_use(
+            xgb_model, booster, model, len(trees), self.n_outputs
+        )
         used = trees[: self.n_trees_used]
         tree_info = model["tree_info"][: self.n_trees_used]
 
@@ -288,15 +300,24 @@ class XGBtoExcel:
                 )
 
     @staticmethod
-    def _trees_in_use(estimator: Any, booster: Any, model: dict, n_trees: int) -> int:
+    def _trees_in_use(
+        estimator: Any, booster: Any, model: dict, n_trees: int, n_outputs: int
+    ) -> int:
         """Honour early stopping: predict() stops at best_iteration, the dump does not."""
         best = getattr(estimator, "best_iteration", None)
         if best is None:
             best = getattr(booster, "best_iteration", None)
-        indptr = model.get("iteration_indptr")
-        if best is None or not indptr or best + 1 >= len(indptr):
+        if best is None:
             return n_trees
-        return int(indptr[best + 1])
+
+        indptr = model.get("iteration_indptr")
+        if indptr and best + 1 < len(indptr):
+            return int(indptr[best + 1])
+
+        # XGBoost 1.x does not record iteration_indptr, so derive the boundary from
+        # how many trees each boosting round adds.
+        per_round = n_outputs * int(model["gbtree_model_param"].get("num_parallel_tree", 1) or 1)
+        return min(n_trees, (best + 1) * per_round)
 
     @staticmethod
     def _parse_base_score(raw: Any) -> list[float]:

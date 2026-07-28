@@ -60,7 +60,9 @@ testpaths = ["tests"]
 # bare `pytest` invocation, which unlike `python -m pytest` does not add the CWD.
 pythonpath = ["."]
 addopts = "-ra --strict-markers --strict-config"
-filterwarnings = ["error::DeprecationWarning"]
+# Fail on deprecations we cause, but not on ones pandas or numpy raise. The version
+# matrix spans several years of those libraries and their warnings are not our bug.
+filterwarnings = ["error::DeprecationWarning:xgbexcel"]
 
 [tool.coverage.run]
 branch = true

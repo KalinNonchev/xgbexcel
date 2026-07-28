@@ -23,6 +23,15 @@ requires_xgboost_2 = pytest.mark.skipif(
     XGBOOST_VERSION < (2, 0), reason="requires XGBoost 2.0 or newer"
 )
 
+NUMPY_VERSION = tuple(int(part) for part in np.__version__.split(".")[:2])
+
+# XGBoost below 2.1 reaches for np.NaN when handling categorical features, and NumPy
+# 2.0 removed it. The combination cannot build the fixture; it says nothing about us.
+categorical_fixture_works = pytest.mark.skipif(
+    XGBOOST_VERSION < (2, 1) and NUMPY_VERSION >= (2, 0),
+    reason="XGBoost <2.1 uses np.NaN, removed in NumPy 2.0",
+)
+
 
 def _excel_if(condition, if_true, if_false):
     return if_true if condition else if_false

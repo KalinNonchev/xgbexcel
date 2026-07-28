@@ -4,7 +4,22 @@ updates:
     directory: /
     schedule:
       interval: monthly
-  - package-ecosystem: pip
-    directory: /
-    schedule:
-      interval: monthly
+    groups:
+      # One PR for all of them. Bumped separately, upload-artifact and
+      # download-artifact drift apart, and the mismatch only surfaces at release
+      # time because publish.yml never runs on a pull request.
+      actions:
+        patterns: ["*"]
+
+  # No pip version updates, deliberately.
+  #
+  # The versions in pyproject.toml are floors, not pins. Dependabot raises them to
+  # the newest release, which for a library only shrinks the set of environments it
+  # can be installed into. Raising the numpy floor to 2.2.6 drops Python 3.9 and
+  # cannot coexist with the numpy<2 that XGBoost 1.7 needs, so it breaks the
+  # xgboost-versions matrix outright. Same for pytest and setuptools, which both
+  # require Python 3.10 at their current releases.
+  #
+  # Compatibility is guarded by that matrix instead: it runs XGBoost 1.7.6 through
+  # the current pre-release on every push. Dependabot security alerts are a separate
+  # feature and are not affected by this file.

@@ -51,6 +51,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+      - name: Install the OpenMP runtime
+        # XGBoost links against libomp, which macOS runners do not ship.
+        if: runner.os == 'macOS'
+        run: brew install libomp
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[test]"
       - name: Show resolved versions

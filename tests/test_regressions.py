@@ -78,16 +78,24 @@ def test_explicit_zero_base_score_is_not_replaced(integer_data):
 
 
 def test_multiclass_uses_per_class_base_scores(integer_data):
-    """Was a single 0.5 added to every class. xgboost 3.x stores a vector."""
+    """Was a hard-coded 0.5 per class, ignoring what the model recorded.
+
+    Which XGBoost releases store a per-class vector rather than one shared value has
+    moved around, so assert the invariant instead of a version: the converter uses
+    exactly what the model stores, broadcasting only when the model stores one value.
+    """
     X, y = integer_data
     labels = np.digitize(y, np.quantile(y, [1 / 3, 2 / 3]))
     model = xgb.XGBClassifier(n_estimators=3, max_depth=2).fit(X, labels)
 
     converter = XGBtoExcel(model)
     assert len(converter.base_scores) == 3
-    if XGBOOST_VERSION >= (3, 0):
-        # 3.x stores one intercept per class; earlier versions used a single 0.5.
-        assert converter.base_scores != [0.5, 0.5, 0.5]
+
+    config = json.loads(model.get_booster().save_config())
+    stored = XGBtoExcel._parse_base_score(config["learner"]["learner_model_param"]["base_score"])
+    expected = stored * 3 if len(stored) == 1 else stored
+    assert converter.base_scores == pytest.approx(expected)
+
     assert_formula_matches_model(converter, model, X)
 
 

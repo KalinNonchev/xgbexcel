@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so a breaking XGBoost or NumPy release surfaces here rather than in
+    # a user's spreadsheet.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip ruff
+      - name: Lint
+        run: ruff check --output-format=github .
+      - name: Check formatting
+        run: ruff format --check --diff .
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install the OpenMP runtime
+        # XGBoost links against libomp, which macOS runners do not ship.
+        if: runner.os == 'macOS'
+        run: brew install libomp
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[test]"
+      - name: Show resolved versions
+        run: python -c "import xgboost, numpy; print('xgboost', xgboost.__version__, 'numpy', numpy.__version__)"
+      - name: Test
+        run: pytest --cov=xgbexcel --cov-branch --cov-report=xml --cov-report=term-missing
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  xgboost-versions:
+    # The converter reads XGBoost's serialised model, and that layout has changed
+    # across releases (dart nesting, iteration_indptr, per-class base_score). Pin the
+    # boundaries of the supported range and also watch the unreleased build.
+    runs-on: ubuntu-latest
+    # The pre-release build is an early warning, not a merge gate: it can break for
+    # reasons upstream that we have not had a chance to react to yet.
+    continue-on-error: ${{ matrix.xgboost == 'pre' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        xgboost: ["1.7.6", "2.0.3", "2.1.4", "3.0.0", "latest", "pre"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - name: Install with XGBoost ${{ matrix.xgboost }}
+        # Resolve the whole stack in one pip invocation. Pinning XGBoost first and
+        # downgrading NumPy afterwards leaves pandas and scikit-learn built against
+        # the NumPy that was just removed, which fails at import.
+        run: |
+          case "${{ matrix.xgboost }}" in
+            latest) python -m pip install -e ".[test]" --upgrade xgboost ;;
+            pre)    python -m pip install -e ".[test]" &&
+                    python -m pip install --upgrade --pre xgboost ;;
+            1.7.6|2.0.3)
+              # These predate NumPy 2.0 and still reference the removed np.NaN.
+              python -m pip install -e ".[test]" "xgboost==${{ matrix.xgboost }}" "numpy<2" ;;
+            *)      python -m pip install -e ".[test]" "xgboost==${{ matrix.xgboost }}" ;;
+          esac
+      - run: python -c "import xgboost; print('xgboost', xgboost.__version__)"
+      - run: pytest -q
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip build twine
+      - run: python -m build
+      - name: Check metadata
+        run: twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/

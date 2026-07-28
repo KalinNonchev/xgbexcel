@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xgbexcel"
+version = "1.0.0"
+description = "Convert XGBoost models into Excel formula expressions for spreadsheet deployment"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Kalin Nonchev" }]
+keywords = [
+    "xgboost",
+    "excel",
+    "model-deployment",
+    "machine-learning",
+    "model-export",
+    "interpretability",
+    "gradient-boosting",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Code Generators",
+    "Typing :: Typed",
+]
+dependencies = ["xgboost>=1.7", "numpy>=1.20"]
+
+[project.optional-dependencies]
+test = ["pytest>=7", "pytest-cov>=4", "numpy", "pandas", "scikit-learn"]
+dev = ["xgbexcel[test]", "ruff>=0.6", "build", "twine"]
+
+[project.urls]
+Homepage = "https://github.com/KalinNonchev/xgbexcel"
+Repository = "https://github.com/KalinNonchev/xgbexcel"
+Issues = "https://github.com/KalinNonchev/xgbexcel/issues"
+Changelog = "https://github.com/KalinNonchev/xgbexcel/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+include = ["xgbexcel*"]
+
+[tool.setuptools.package-data]
+xgbexcel = ["py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+# Put the repo root on sys.path so `from tests.conftest import ...` resolves under a
+# bare `pytest` invocation, which unlike `python -m pytest` does not add the CWD.
+pythonpath = ["."]
+addopts = "-ra --strict-markers --strict-config"
+# Fail on deprecations we cause, but not on ones pandas or numpy raise. The version
+# matrix spans several years of those libraries and their warnings are not our bug.
+filterwarnings = ["error::DeprecationWarning:xgbexcel"]
+
+[tool.coverage.run]
+branch = true
+source = ["xgbexcel"]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
+fail_under = 90
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "RUF"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]

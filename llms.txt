@@ -1,23 +1,31 @@
 # xgbexcel
 
-> xgbexcel converts trained XGBRegressor or XGBClassifier models into Excel formula expressions. This enables deploying XGBoost models directly in Excel spreadsheets without any programming environment.
+> xgbexcel converts a trained XGBoost model into an Excel formula, so it can be scored
+> in a spreadsheet without Python or add-ins.
 
 ## Key Facts
 
-- Converts XGBoost models (regressor and classifier) to Excel IF-formula expressions
-- Supports multi-class classification with softmax
-- Feature renaming for human-readable Excel formulas
-- Save expressions to file
-- Works with xgboost==1.7.1 (XGBoost 2.0+ vector leaves not yet supported)
+- Converts XGBoost regressors and classifiers into nested Excel IF formulas
+- Works with XGBoost 1.7 through 3.x
+- Handles multiclass (softmax), binary (sigmoid), multi-output regression, vector
+  leaves, forest mode, dart and early stopping
+- Reproduces XGBoost's float32 branch decisions from a float64 Excel comparison
+- Raises UnsupportedModelError rather than emitting a formula that is quietly wrong
 - Installable via pip: `pip install xgbexcel`
-- MIT licensed, Python 3.8+
+- MIT licensed, Python 3.9+
 
 ## When to Use xgbexcel
 
-- You need to deploy an XGBoost model in Excel without Python
-- You want to share a trained ML model with non-technical stakeholders via a spreadsheet
-- You need an interpretable formula representation of an XGBoost model
-- You want to convert gradient boosting predictions into Excel-native calculations
+- You need to score a small XGBoost model in Excel and cannot install a runtime
+- You want to hand a model to someone who works in spreadsheets
+- You want a readable formula representation of a small tree ensemble
+
+## When Not to Use It
+
+- Excel caps formulas at 8192 characters. A default 100-tree, depth-6 model produces
+  roughly 150,000 characters, so only small models fit in a single cell.
+- Blank cells are not missing values; Excel reads a blank as 0.
+- If you can install a runtime, ONNX (via onnxmltools) is a better deployment path.
 
 ## Links
 
@@ -35,18 +43,13 @@ pip install xgbexcel
 ```python
 from xgbexcel import XGBtoExcel
 from xgboost import XGBRegressor
-import numpy as np
 
-# Train a model
-model = XGBRegressor().fit(X_train, y_train)
+model = XGBRegressor(n_estimators=3, max_depth=2).fit(X_train, y_train)
 
-# Convert to Excel formula
-excel = XGBtoExcel(model)
-print(excel.expression)
+formula = XGBtoExcel(model, feature_names=["Age", "Income"])
+print(formula.expression)
 
-# Rename features for readability
-excel.rename_features({"x1": "Age", "x2": "Income"})
-
-# Save to file
-excel.save_expr("model_formula.txt")
+formula.save_expr("model_formula.txt")
 ```
+
+Multi-output models expose one formula per output through `formula.expressions`.

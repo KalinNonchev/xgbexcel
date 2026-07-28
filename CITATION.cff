@@ -8,8 +8,8 @@ authors:
     orcid: https://orcid.org/0009-0001-4904-8772
 repository-code: https://github.com/KalinNonchev/xgbexcel
 license: MIT
-version: 0.1.0
-date-released: "2023-01-01"
+version: 1.0.0
+date-released: "2026-07-28"
 keywords:
   - xgboost
   - excel

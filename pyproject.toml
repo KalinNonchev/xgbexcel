@@ -38,7 +38,7 @@ classifiers = [
 dependencies = ["xgboost>=1.7", "numpy>=1.20"]
 
 [project.optional-dependencies]
-test = ["pytest>=7", "pytest-cov>=4", "numpy", "pandas", "scikit-learn"]
+test = ["pytest>=7", "pytest-cov>=7.1.0", "numpy", "pandas", "scikit-learn"]
 dev = ["xgbexcel[test]", "ruff>=0.6", "build", "twine"]
 
 [project.urls]

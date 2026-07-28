@@ -32,16 +32,31 @@ formula = XGBtoExcel(model)
 print(formula.expression)
 ```
 
-Features are called `x1`, `x2`, ... in training column order. Give them real names
-either up front or afterwards:
+Features are called `x1`, `x2`, ... in training column order. There are two ways to
+give them real names, and they are alternatives rather than steps. Name them when you
+build the converter:
 
 ```python
-XGBtoExcel(model, feature_names=["age", "income"])
-
-formula.rename_features({"x1": "age", "x2": "income"})
+named = XGBtoExcel(model, feature_names=["age", "income"])
+print(named.expression)
 ```
 
-Renaming matches whole names, so renaming `x1` leaves `x10` alone.
+Or rename an existing converter, which is what you want when the object already exists:
+
+```python
+formula.rename_features({"x1": "age", "x2": "income"})
+print(formula.expression)
+```
+
+Both produce the same formula. Do not do both to the same converter: once it is built
+with `feature_names`, there is no `x1` left to rename and `rename_features` raises
+`KeyError` rather than silently doing nothing.
+
+Renaming substitutes every name at once and matches whole names only, so renaming `x1`
+leaves `x10` alone, and a new name is never rewritten again by a later entry.
+
+If the model was trained on a `pandas.DataFrame`, its column names are picked up
+automatically and neither call is needed.
 
 Write the formula out, then paste it into a cell:
 
@@ -50,13 +65,50 @@ formula.save_expr("model.txt")
 ```
 
 Multi-output models (multiclass classification, multi-output regression) produce one
-formula per output:
+formula per output, in `expressions`:
 
 ```python
-classifier = XGBClassifier(n_estimators=3).fit(X, y)
+from xgboost import XGBClassifier
+
+classes = np.random.randint(0, 3, 100)
+classifier = XGBClassifier(n_estimators=3, max_depth=1).fit(X, classes)
+
 for label, expr in zip(classifier.classes_, XGBtoExcel(classifier).expressions):
     print(label, expr)
 ```
+
+Each formula gives that class's probability, and across a row they sum to 1. Put one
+per column in the sheet.
+
+## API
+
+`XGBtoExcel(model, feature_names=None, sep=",", warn_on_size=True)`
+
+| Argument | Meaning |
+|---|---|
+| `model` | A fitted XGBoost estimator or a raw `xgboost.Booster` |
+| `feature_names` | Names in training column order. Defaults to the booster's own names, else `x1`, `x2`, ... |
+| `sep` | Argument separator inside Excel functions. Use `";"` in locales where the comma is the decimal separator |
+| `warn_on_size` | Warn when a formula exceeds Excel's character limit |
+
+| Attribute | Meaning |
+|---|---|
+| `expression` | The formula. For multi-output models, the per-output formulas joined by `" , "` |
+| `expressions` | One formula per output. Prefer this for multi-output models |
+| `expression_trees` | One formula per tree, before they are summed. Useful for the helper-cell layout |
+| `feature_names` | Current feature names, reflecting any renaming |
+| `base_scores` | The intercept per output, in margin space |
+| `objective`, `link` | The model's objective and the link applied to the margin |
+| `n_features`, `n_outputs`, `n_trees_used` | Shape of the converted model |
+
+| Method | Meaning |
+|---|---|
+| `rename_features(mapping)` | Rename features in place and return `self`, so calls chain |
+| `save_expr(path)` | Write the formula to a file, one line per output |
+
+`n_trees_used` is worth checking on an early-stopped model: it reports the trees the
+formula actually contains, which is what `predict` uses rather than everything the
+model holds.
 
 ## What is supported
 

@@ -49,6 +49,16 @@ it returned formulas that computed the wrong number, so upgrading changes result
 - New: `expressions`, `n_outputs`, `n_features`, `n_trees_used`, `base_scores`,
   `objective`, `link`, and a useful `__repr__`.
 
+### Documentation
+
+- The README documents the API surface, and a test asserts that every attribute and
+  objective it names actually exists, so the docs cannot drift from the code.
+- The README's Python examples are executed by the test suite in order, in one
+  namespace, the way a reader would run them. The previous feature-naming example
+  looked like two steps but raised `KeyError` if you followed it literally: naming
+  features at construction leaves no `x1` to rename afterwards. They are now shown as
+  the alternatives they are.
+
 ### Packaging
 
 - `pyproject.toml` replaces `setup.py` and `setup.cfg`.
